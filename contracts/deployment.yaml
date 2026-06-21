@@ -1,0 +1,21 @@
+# Deployment configuration for Stacks contracts
+# This file contains deployment settings for different networks
+
+networks:
+  testnet:
+    node: https://api.testnet.hiro.so
+    deployer:
+      secret_key: ${TESTNET_SECRET_KEY}
+      stx_address: ${TESTNET_DEPLOYER_ADDRESS}
+    
+  mainnet:
+    node: https://api.hiro.so
+    deployer:
+      secret_key: ${MAINNET_SECRET_KEY}
+      stx_address: ${MAINNET_DEPLOYER_ADDRESS}
+
+contracts:
+  read-only-stx-dispersion:
+    path: ./read-only-stx-dispersion.clar
+    clarity_version: 2
+    cost: 1000
