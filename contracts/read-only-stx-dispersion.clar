@@ -1,61 +1,58 @@
-;; Read-only STX dispersion preview contract.
-;; It never calls stx-transfer? and cannot move funds.
+;; Payment storage contract
+;; Stores recipient names and amounts for payment tracking
+;; No token sending functionality - storage only
 
-(define-constant ERR_INVALID_INPUT (err u100))
-(define-constant MAX_RECIPIENTS u200)
+(define-constant ERR_NOT_FOUND (err u100))
+(define-constant ERR_INVALID_AMOUNT (err u101))
+(define-constant MAX_NAME_LENGTH (u100))
 
-(define-private (sum-recipient (recipient {wallet: principal, amount: uint}) (running uint))
-  (+ running (get amount recipient))
-)
+;; Data maps for storing payment information
+(define-data-var recipients (map (string-utf8 MAX_NAME_LENGTH) uint) {})
 
-(define-private (count-invalid-recipient (recipient {wallet: principal, amount: uint}) (running uint))
-  (if (is-eq (get amount recipient) u0)
-    (+ running u1)
-    running
-  )
-)
-
-(define-read-only (preview-single
-    (sender principal)
-    (recipient principal)
-    (amount uint)
-    (memo (string-utf8 64))
-  )
-  (if (or (is-eq amount u0) (is-eq sender recipient))
-    ERR_INVALID_INPUT
-    (ok {
-      sender: sender,
-      recipient-count: u1,
-      total-microstx: amount,
-      memo: memo,
-      executable: false
-    })
-  )
-)
-
-(define-read-only (preview-many
-    (sender principal)
-    (recipients (list 200 {wallet: principal, amount: uint}))
-    (memo (string-utf8 64))
-  )
-  (let (
-      (recipient-count (len recipients))
-      (invalid-count (fold count-invalid-recipient recipients u0))
-      (total (fold sum-recipient recipients u0))
+;; Add or update a recipient with their amount
+(define-public (add-recipient (name (string-utf8 MAX_NAME_LENGTH)) (amount uint))
+  (let ((current-amount (default-to u0 (map-get? (var-get recipients) name))))
+    (if (is-eq amount u0)
+      ERR_INVALID_AMOUNT
+      (ok (var-set recipients (map-set (var-get recipients) name amount)))
     )
-    (if (or
-        (is-eq recipient-count u0)
-        (> recipient-count MAX_RECIPIENTS)
-        (> invalid-count u0)
+  )
+)
+
+;; Remove a recipient from storage
+(define-public (remove-recipient (name (string-utf8 MAX_NAME_LENGTH)))
+  (let ((current-amount (map-get? (var-get recipients) name)))
+    (match current-amount
+      amount (ok (var-set recipients (map-delete (var-get recipients) name)))
+      ERR_NOT_FOUND
+    )
+  )
+)
+
+;; Get amount for a specific recipient
+(define-read-only (get-recipient-amount (name (string-utf8 MAX_NAME_LENGTH)))
+  (let ((amount (map-get? (var-get recipients) name)))
+    (match amount
+      value (ok value)
+      ERR_NOT_FOUND
+    )
+  )
+)
+
+;; Get all recipients and their amounts
+(define-read-only (get-all-recipients)
+  (ok (var-get recipients))
+)
+
+;; Get total amount stored
+(define-read-only (get-total-amount)
+  (let ((recipients-map (var-get recipients)))
+    (ok (fold 
+      (lambda (entry total)
+        (+ total (get value entry))
       )
-      ERR_INVALID_INPUT
-      (ok {
-        sender: sender,
-        recipient-count: recipient-count,
-        total-microstx: total,
-        memo: memo,
-        executable: false
-      })
-    )
+      (map-to-list recipients-map)
+      u0
+    ))
   )
 )
