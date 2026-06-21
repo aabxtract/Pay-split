@@ -1,0 +1,25 @@
+[project]
+name = "pay-split"
+description = "STX dispersion and payment splitting contracts"
+authors = ["pay-split"]
+telemetry = true
+stacks_network = "testnet"
+
+[contracts.read-only-stx-dispersion]
+path = "contracts/read-only-stx-dispersion.clar"
+clarity_version = 2
+epoch = "2.4"
+
+[repl]
+costs_version = 2
+parser_version = 2
+
+[repl.analysis]
+passes = ["check_checker"]
+
+[repl.analysis.check_checker]
+strict = true
+trusted = []
+checker_metadata = {}
+filter_strings = true
+check_datastore = true
