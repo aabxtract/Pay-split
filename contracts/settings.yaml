@@ -1,0 +1,10 @@
+network: testnet
+node: https://api.testnet.hiro.so
+deployer:
+  secret_key: # Add your secret key here
+  stx_address: # Add your deployer address here
+
+contracts:
+  - name: read-only-stx-dispersion
+    path: ./read-only-stx-dispersion.clar
+    cost: 1000
