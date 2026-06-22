@@ -19,3 +19,8 @@ contracts:
     path: ./read-only-stx-dispersion.clar
     clarity_version: 2
     cost: 1000
+
+  transaction-storage:
+    path: ./transaction-storage.clar
+    clarity_version: 2
+    cost: 3000
