@@ -41,3 +41,13 @@ yarn-error.log*
 next-env.d.ts
 contracts/mainnet.toml
 contracts/devnet.toml
+contracts/settings/mainnet.toml
+contracts/settings/devnet.toml
+contracts/settings/simnet.toml
+contracts/settings/testnet.toml
+
+# interaction scripts and wallet data
+contracts/interact.js
+contracts/resume.js
+contracts/interaction-wallets.json
+contracts/deploy-tx-storage.js
