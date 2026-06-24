@@ -90,7 +90,7 @@ export default function DispensePage() {
         txResults.push({
           address: r.address,
           amount: r.amount,
-          txId: response.txId,
+          txId: response.txid,
         });
       } catch (err) {
         txResults.push({

@@ -15,6 +15,7 @@ import {
   request,
 } from "@stacks/connect";
 import { verifyMessageSignatureRsv } from "@stacks/encryption";
+import { Cl, type ClarityValue, type TupleCV } from "@stacks/transactions";
 
 interface StxAddress {
   address: string;
@@ -31,9 +32,9 @@ interface WalletContextType {
     recipient: string,
     amountMicro: string,
     memo?: string
-  ) => Promise<{ txId: string }>;
+  ) => Promise<{ txid: string }>;
   signMessage: (message: string) => Promise<{ signature: string; publicKey: string }>;
-  signStructuredMessage: (domain: Record<string, unknown>, message: Record<string, unknown>) => Promise<{ signature: string; publicKey: string }>;
+  signStructuredMessage: (domain: TupleCV, message: ClarityValue) => Promise<{ signature: string; publicKey: string }>;
   verifySignature: (message: string, signature: string, publicKey: string) => boolean;
 }
 
@@ -43,7 +44,7 @@ const WalletContext = createContext<WalletContextType>({
   connecting: false,
   connectWallet: async () => {},
   disconnectWallet: () => {},
-  sendTransfer: async () => ({ txId: "" }),
+  sendTransfer: async () => ({ txid: "" }),
   signMessage: async () => ({ signature: "", publicKey: "" }),
   signStructuredMessage: async () => ({ signature: "", publicKey: "" }),
   verifySignature: () => false,
@@ -111,7 +112,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         network: "mainnet",
       });
 
-      return result as { txId: string };
+      return result as { txid: string };
     },
     []
   );
@@ -125,7 +126,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signStructuredMessage = useCallback(
-    async (domain: Record<string, unknown>, message: Record<string, unknown>) => {
+    async (domain: TupleCV, message: ClarityValue) => {
       const result = await request("stx_signStructuredMessage", {
         domain,
         message,
