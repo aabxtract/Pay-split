@@ -8,25 +8,18 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  connect,
+  disconnect,
+  isConnected,
+  request,
+} from "@stacks/connect";
+import { verifyMessageSignatureRsv } from "@stacks/encryption";
 
 interface StxAddress {
   address: string;
   publicKey: string;
 }
-
-interface WalletProviderAPI {
-  connect: () => Promise<{ addresses: StxAddress[] }>;
-  disconnect: () => Promise<void>;
-  getAddresses: () => Promise<{ addresses: StxAddress[] }>;
-  request: (method: string, params: Record<string, unknown>) => Promise<unknown>;
-}
-
-interface WindowWithWallets {
-  LeatherProvider?: WalletProviderAPI;
-  XverseProviders?: { STX?: WalletProviderAPI };
-}
-
-declare const window: WindowWithWallets;
 
 interface WalletContextType {
   connected: boolean;
@@ -34,7 +27,14 @@ interface WalletContextType {
   connecting: boolean;
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
-  sendTransfer: (recipient: string, amountMicro: string, memo?: string) => Promise<{ txId: string }>;
+  sendTransfer: (
+    recipient: string,
+    amountMicro: string,
+    memo?: string
+  ) => Promise<{ txId: string }>;
+  signMessage: (message: string) => Promise<{ signature: string; publicKey: string }>;
+  signStructuredMessage: (domain: Record<string, unknown>, message: Record<string, unknown>) => Promise<{ signature: string; publicKey: string }>;
+  verifySignature: (message: string, signature: string, publicKey: string) => boolean;
 }
 
 const WalletContext = createContext<WalletContextType>({
@@ -44,17 +44,13 @@ const WalletContext = createContext<WalletContextType>({
   connectWallet: async () => {},
   disconnectWallet: () => {},
   sendTransfer: async () => ({ txId: "" }),
+  signMessage: async () => ({ signature: "", publicKey: "" }),
+  signStructuredMessage: async () => ({ signature: "", publicKey: "" }),
+  verifySignature: () => false,
 });
 
 export function useWallet() {
   return useContext(WalletContext);
-}
-
-function getProvider(): WalletProviderAPI | null {
-  if (typeof window === "undefined") return null;
-  if (window.LeatherProvider) return window.LeatherProvider;
-  if (window.XverseProviders?.STX) return window.XverseProviders.STX;
-  return null;
 }
 
 const STORAGE_KEY = "stx_dispense_wallet";
@@ -66,10 +62,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const checkConnection = useCallback(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setConnected(true);
-        setStxAddress(stored);
+      if (isConnected()) {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          setConnected(true);
+          setStxAddress(stored);
+        }
       }
     } catch {
       // ignore
@@ -81,14 +79,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [checkConnection]);
 
   const connectWallet = useCallback(async () => {
-    const provider = getProvider();
-    if (!provider) {
-      alert("No Stacks wallet found. Please install Leather or Xverse.");
-      return;
-    }
     try {
       setConnecting(true);
-      const response = await provider.connect();
+      const response = await connect();
       const addr = response.addresses[0]?.address;
       if (addr) {
         setConnected(true);
@@ -103,6 +96,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const disconnectWallet = useCallback(() => {
+    disconnect();
     setConnected(false);
     setStxAddress(null);
     localStorage.removeItem(STORAGE_KEY);
@@ -110,10 +104,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const sendTransfer = useCallback(
     async (recipient: string, amountMicro: string, memo?: string) => {
-      const provider = getProvider();
-      if (!provider) throw new Error("No wallet connected");
-
-      const result = await provider.request("stx_transferStx", {
+      const result = await request("stx_transferStx", {
         recipient,
         amount: amountMicro,
         memo: memo || "",
@@ -121,6 +112,41 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       });
 
       return result as { txId: string };
+    },
+    []
+  );
+
+  const signMessage = useCallback(async (message: string) => {
+    const result = await request("stx_signMessage", {
+      message,
+    });
+
+    return result as { signature: string; publicKey: string };
+  }, []);
+
+  const signStructuredMessage = useCallback(
+    async (domain: Record<string, unknown>, message: Record<string, unknown>) => {
+      const result = await request("stx_signStructuredMessage", {
+        domain,
+        message,
+      });
+
+      return result as { signature: string; publicKey: string };
+    },
+    []
+  );
+
+  const verifySignature = useCallback(
+    (message: string, signature: string, publicKey: string) => {
+      try {
+        return verifyMessageSignatureRsv({
+          message,
+          signature,
+          publicKey,
+        });
+      } catch {
+        return false;
+      }
     },
     []
   );
@@ -134,6 +160,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         connectWallet,
         disconnectWallet,
         sendTransfer,
+        signMessage,
+        signStructuredMessage,
+        verifySignature,
       }}
     >
       {children}
