@@ -15,12 +15,7 @@ import {
   request,
 } from "@stacks/connect";
 import { verifyMessageSignatureRsv } from "@stacks/encryption";
-import { Cl, type ClarityValue, type TupleCV } from "@stacks/transactions";
-
-interface StxAddress {
-  address: string;
-  publicKey: string;
-}
+import type { ClarityValue, TupleCV } from "@stacks/transactions";
 
 interface WalletContextType {
   connected: boolean;
@@ -105,10 +100,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const sendTransfer = useCallback(
     async (recipient: string, amountMicro: string, memo?: string) => {
-      const result = await request("stx_transferStx", {
-        recipient,
-        amount: amountMicro,
-        memo: memo || "",
+      const result = await request("sendTransfer", {
+        recipients: [{ address: recipient, amount: amountMicro }],
         network: "mainnet",
       });
 
