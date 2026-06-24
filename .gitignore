@@ -48,6 +48,5 @@ contracts/settings/testnet.toml
 
 # interaction scripts and wallet data
 contracts/interact.js
-contracts/resume.js
 contracts/interaction-wallets.json
 contracts/deploy-tx-storage.js
