@@ -77,7 +77,7 @@ const MICROSTX_PER_STX = 1_000_000;
 const BASE_FEE_MICROSTX = 180;
 const PER_RECIPIENT_FEE_MICROSTX = 45;
 const MAX_RECIPIENTS = 200;
-const MAX_MEMO_LENGTH = 64;
+const MAX_MEMO_LENGTH = 34;
 const STACKS_ADDRESS_PATTERN = /^S[PMTN][0-9A-HJKMNP-TV-Z]{20,40}$/;
 
 export function buildPreview(input: DispersionPreviewInput): DispersionPreview {
