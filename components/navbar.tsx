@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ConnectWallet } from "./connect-wallet";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Navbar() {
   return (
@@ -16,13 +17,14 @@ export function Navbar() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link
             href="/dispense"
             className="hidden text-sm text-muted transition-colors hover:text-foreground sm:block"
           >
             Dispense
           </Link>
+          <ThemeToggle />
           <ConnectWallet />
         </div>
       </div>
